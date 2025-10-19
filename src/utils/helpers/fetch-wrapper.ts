@@ -60,8 +60,13 @@ function request(method: Method) {
       return response.data;
     } catch (error: any) {
       const errorText =
-        error?.response?.data?.message ||
-        'An unexpected error occurred. Please try again later.';
+      error?.response?.data?.message ||
+      'An unexpected error occurred. Please try again later.';
+      const status = error?.response?.status;
+      const { logout } = useAuthStore();
+      if (status === 401 || errorText.toLowerCase().includes('unauthenticated')) {
+        logout();
+      }
       errorMessage(errorText);
       throw error;
     }

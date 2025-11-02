@@ -15,7 +15,8 @@ import {
   PackagesIcon,
   RouteIcon,
   TrainIcon,
-  ServicemarkIcon
+  ServicemarkIcon,
+  StarIcon
 } from 'vue-tabler-icons';
 // import { isSuperAdmin } from '@/utils/api';
 
@@ -71,12 +72,16 @@ const allMenuItems: menu[] = [
     icon: ListIcon,
     to: '/guidelines',
   },
-  
-    {
-      title: 'Settings',
-      icon: SettingsIcon,
-      to: '/settings',
-    },
+  {
+    title: 'Reviews',
+    icon: StarIcon,
+    to: '/reviews',
+  },
+  {
+    title: 'Settings',
+    icon: SettingsIcon,
+    to: '/settings',
+  },
   
   
 ];

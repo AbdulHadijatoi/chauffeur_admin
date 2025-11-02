@@ -61,6 +61,11 @@ const DashboardRoutes = {
       path: '/settings',
       component: () => import('@/views/dashboard/Settings/Settings.vue')
     },
+    {
+      name: 'Reviews',
+      path: '/reviews',
+      component: () => import('@/views/dashboard/Reviews/Reviews.vue')
+    },
     
   ]
 };

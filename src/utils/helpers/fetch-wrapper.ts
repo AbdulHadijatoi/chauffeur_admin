@@ -63,12 +63,25 @@ function request(method: Method) {
       error?.response?.data?.message ||
       'An unexpected error occurred. Please try again later.';
       const status = error?.response?.status;
-      const { logout } = useAuthStore();
-      if (status === 401 || errorText.toLowerCase().includes('unauthenticated')) {
-        logout();
+      
+      // Don't logout on login endpoint errors - let the form handle them
+      const isLoginEndpoint = url.includes('/auth/login');
+      
+      if (!isLoginEndpoint) {
+        const authStore = useAuthStore();
+        // Only logout if user is already authenticated (has token) and gets 401
+        if ((status === 401 || errorText.toLowerCase().includes('unauthenticated')) && authStore.token) {
+          authStore.logout();
+        } else {
+          // Show error message for non-login endpoints (except when already logged out)
+          errorMessage(errorText);
+        }
       }
-      errorMessage(errorText);
-      throw error;
+      
+      // Create a new error with the message for proper handling
+      const loginError = new Error(errorText);
+      (loginError as any).response = error?.response;
+      throw loginError;
     }
   };
 }

@@ -16,7 +16,11 @@ const emailRules = ref([(v: string) => !!v || 'E-mail is required', (v: string) 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function validate(values: any, { setErrors }: any) {
   const authStore = useAuthStore();
-  return authStore.login(email.value, password.value).catch((error) => setErrors({ apiError: error }));
+  return authStore.login(email.value, password.value).catch((error: any) => {
+    // Extract error message from error object
+    const errorMessage = error?.message || error?.toString() || 'Login failed. Please check your credentials.';
+    setErrors({ apiError: errorMessage });
+  });
 }
 </script>
 

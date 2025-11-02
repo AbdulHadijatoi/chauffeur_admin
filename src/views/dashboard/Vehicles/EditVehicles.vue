@@ -16,32 +16,11 @@ export default {
       loading: false,
       form: {},
       files: [], // multiple new files
+      existingImages: [], // existing images for display only
       vehicle_attributes: [
         'name',
         'passengers',
         'luggage',
-        'mileage',
-        'transmission',
-        'steering',
-        'fuel_type',
-        'engine',
-        'power',
-        'torque',
-        'acceleration',
-        'top_speed',
-        'fuel_capacity',
-        'weight',
-        'length',
-        'width',
-        'height',
-        'wheelbase',
-        'ground_clearance',
-        'turning_radius',
-        'boot_space',
-        'air_conditioning',
-        'infotainment',
-        'safety_features',
-        'comfort_features',
       ],
     };
   },
@@ -52,15 +31,22 @@ export default {
       try {
         const formData = new FormData();
 
-        // Append all text fields
+        // Append all text fields (exclude files/images from form object)
         for (const key in this.form) {
-          formData.append(key, this.form[key]);
+          // Skip any image-related fields that might be in the form object
+          if (key !== 'images' && key !== 'files' && this.form[key] !== null && this.form[key] !== undefined) {
+            formData.append(key, this.form[key]);
+          }
         }
 
         // Append multiple image files if selected
-        if (this.files && this.files.length > 0) {
+        // Only append if files is an array with actual File objects
+        if (this.files && Array.isArray(this.files) && this.files.length > 0) {
           this.files.forEach((file, index) => {
-            formData.append(`images[${index}]`, file);
+            // Only append if it's an actual File object
+            if (file instanceof File) {
+              formData.append(`images[${index}]`, file);
+            }
           });
         }
 
@@ -82,8 +68,13 @@ export default {
   },
 
   mounted() {
-    // Load existing data
-    this.form = { ...this.selectedRow };
+    // Load existing data, but exclude images array to prevent it from being sent as object
+    const { images, ...formData } = this.selectedRow;
+    this.form = { ...formData };
+    // Store existing images separately for display only
+    this.existingImages = images || [];
+    // Ensure files is always an empty array initially
+    this.files = [];
   },
 };
 </script>
@@ -110,10 +101,10 @@ export default {
               </v-col>
 
               <!-- Existing Images Preview -->
-              <v-col cols="12" v-if="form.images && form.images.length">
+              <v-col cols="12" v-if="existingImages && existingImages.length">
                 <div class="flex flex-wrap gap-2">
                   <div
-                    v-for="(img, index) in form.images"
+                    v-for="(img, index) in existingImages"
                     :key="index"
                     class="inline-block"
                   >

@@ -6,7 +6,7 @@ import { fetchWrapper } from '@/utils/helpers/fetch-wrapper';
 import VueDatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 import { useAuthStore } from '@/stores/auth';
-import { CameraIcon, EditIcon, PlusIcon, TrashIcon } from 'vue-tabler-icons';
+import { CameraIcon, EditIcon, PlusIcon, TrashIcon, XIcon } from 'vue-tabler-icons';
 import ViewVehicle from './ViewVehicles.vue';
 import EditVehicle from './EditVehicles.vue';
 import CreateVehicle from './CreateVehicles.vue';
@@ -63,18 +63,56 @@ export default {
 
             viewImagesDialog: false,
             selectedImages: [],
+            selectedVehicle: null,
+            deleteImageDialog: false,
+            imageToDelete: null,
         }
     },
 
     methods: {
       viewAllImages(item) {
         if (item.images && item.images.length > 0) {
-          this.selectedImages = item.images.map(img => img.image_url); // ensure full URL
+          this.selectedImages = item.images; // store full image objects with id
+          this.selectedVehicle = item;
           this.viewImagesDialog = true;
           console.log("Selected Images:", this.selectedImages);
         } else {
           this.selectedImages = [];
+          this.selectedVehicle = item;
           this.viewImagesDialog = true;
+        }
+      },
+      confirmDeleteImage(image) {
+        this.imageToDelete = image;
+        this.deleteImageDialog = true;
+      },
+      async deleteImage() {
+        if (!this.imageToDelete || !this.imageToDelete.id) {
+          return;
+        }
+        
+        this.loading = true;
+        try {
+          const responseData = await fetchWrapper.post(`${base_url}/admin/vehicle-images/delete/${this.imageToDelete.id}`, {});
+          successMessage(responseData.message || 'Image deleted successfully');
+          
+          // Remove the deleted image from the selectedImages array
+          this.selectedImages = this.selectedImages.filter(img => img.id !== this.imageToDelete.id);
+          
+          // Also update the vehicle's images array if it exists
+          if (this.selectedVehicle && this.selectedVehicle.images) {
+            this.selectedVehicle.images = this.selectedVehicle.images.filter(img => img.id !== this.imageToDelete.id);
+          }
+          
+          // Refresh the vehicle list to update data
+          await this.getData();
+          
+          this.deleteImageDialog = false;
+          this.imageToDelete = null;
+        } catch (error) {
+          console.error("Error deleting image:", error);
+        } finally {
+          this.loading = false;
         }
       },
         async getData() {
@@ -317,8 +355,25 @@ export default {
     <v-card-title>Vehicle Images</v-card-title>
     <v-card-text>
       <v-row>
-        <v-col v-for="(img, i) in selectedImages" :key="i" cols="12" sm="4" md="3">
-          <v-img :src="img" aspect-ratio="1" cover class="rounded-lg elevation-2" />
+        <v-col v-for="(img, i) in selectedImages" :key="img.id || i" cols="12" sm="4" md="3">
+          <div style="position: relative;">
+            <v-img 
+              :src="img.image_url" 
+              aspect-ratio="1" 
+              cover 
+              class="rounded-lg elevation-2" 
+            />
+            <v-btn
+              icon
+              size="small"
+              color="error"
+              style="position: absolute; top: 8px; right: 8px; z-index: 1;"
+              @click="confirmDeleteImage(img)"
+              variant="flat"
+            >
+              <XIcon size="16" />
+            </v-btn>
+          </div>
         </v-col>
       </v-row>
       <div v-if="selectedImages.length === 0" class="text-center py-6 text-gray-500">
@@ -330,4 +385,19 @@ export default {
     </v-card-actions>
   </v-card>
 </v-dialog>
+
+  <!-- Delete Image Confirmation Dialog -->
+  <v-dialog v-model="deleteImageDialog" max-width="500px">
+    <v-card>
+      <v-card-title class="headline">Delete Image</v-card-title>
+      <v-card-text>
+        Are you sure you want to delete this image? This action cannot be undone.
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="error" @click="deleteImageDialog = false" :disabled="loading">Cancel</v-btn>
+        <v-btn color="primary" @click="deleteImage()" :loading="loading">Delete</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
